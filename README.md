@@ -3,6 +3,12 @@ EFEagerLoad
 
 EFEagerLoad allows you to easily and selectively eager load your EntityFramework entities (Collections and straight entities) into isolated project models using your own reusable mapping functions. 
 
+## Contents
+- [License](#license)
+- [About the AweSam.Net Project] (#About-the-AweSamNet-Project)
+- [Setup] (#Setup)
+- [Usage] (#Usage)
+
 ## License
 See license details [here](/LICENSE.md).
 
