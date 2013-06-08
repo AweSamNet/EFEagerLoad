@@ -42,7 +42,7 @@ You will need to put this code somewhere where it will only be executed once (pe
     
 ## Usage
 
-Once set up, using the class is as simple as this (breakdown follows):
+Once set up, using the class is as simple as this:
 
     public class TestRepository
     {
