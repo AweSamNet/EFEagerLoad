@@ -15,7 +15,7 @@ See license details [here](/LICENSE.md).
 ## About the AweSam.Net Project
 
 AweSam.Net is a project dedicated to contributing to the OSS world as well as local communities. 
-Follow the AweSamNet project on Twitter: <a href="https://twitter.com/AweSamNet" target="_blank">@AweSamNet</a> and be sure to like on <a href="http://facebook.com/AweSamNet" target="_blank">facebook</a>, where you can also get in touch with us.
+Follow the AweSamNet project on Twitter: <a href="https://twitter.com/AweSamNet" target="_blank">@AweSamNet</a> and be sure to like us on <a href="http://facebook.com/AweSamNet" target="_blank">facebook</a>, where you can also get in touch with us.
 
 ## Setup
 
