@@ -1,7 +1,7 @@
 EFEagerLoad
 ===========
 
-EFEagerLoad allows you to easily and selectively eager load your Entity Framework entities (Collections and straight entities) into isolated project models using your own reusable mapping functions. 
+EFEagerLoad allows you to easily and selectively eager load your Entity Framework entities (Collections and straight entities) using isolated project model selectors. 
 
 ## Contents
 - [License](#license)
