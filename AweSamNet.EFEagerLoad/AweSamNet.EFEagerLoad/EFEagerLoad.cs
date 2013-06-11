@@ -189,7 +189,7 @@ namespace AweSamNet.Data
             query = IncludeNestedEntityProperties<TQuery>(query, eagerLoad, typeof(TPrincipal), mappingProfile);
 
             //execute the query to pull data.
-            var dbResults = query.AsEnumerable();
+            var dbResults = query.ToList();
 
             return mapperFunc(dbResults);
         }
