@@ -54,6 +54,12 @@ namespace AweSamNet.Data
 
             public PropertyInfo Entity1 { get; private set; }
             public PropertyInfo Entity2 { get; private set; }
+
+            public bool Contains(PropertyInfo property)
+            {
+                return (this.Entity1.DeclaringType.Equals(property.DeclaringType) && this.Entity1.Name.Equals(property.Name))
+                    || (this.Entity2.DeclaringType.Equals(property.DeclaringType) && this.Entity2.Name.Equals(property.Name));
+            }
         }
 
         /// <summary>
@@ -87,10 +93,7 @@ namespace AweSamNet.Data
             //verify that it does not already exist
             foreach (var item in profileMappings)
             {
-                if ((item.Entity1.DeclaringType.Equals(entity1.DeclaringType) && item.Entity1.Name.Equals(entity1.Name))
-                    || (item.Entity2.DeclaringType.Equals(entity1.DeclaringType) && item.Entity2.Name.Equals(entity1.Name))
-                    || (item.Entity2.DeclaringType.Equals(entity2.DeclaringType) && item.Entity2.Name.Equals(entity2.Name))
-                    || (item.Entity1.DeclaringType.Equals(entity2.DeclaringType) && item.Entity1.Name.Equals(entity2.Name)))
+                if (item.Contains(entity1) || item.Contains(entity2))
                 {
                     throw new ArgumentException(String.Format(PROPERTY_ALREADY_MAPPED_MESSAGE
                         , item.Entity1.DeclaringType.Name, item.Entity1.Name
@@ -125,8 +128,7 @@ namespace AweSamNet.Data
             //remove all mappings for this property.
             foreach (var item in profileMappings)
             {
-                if ((item.Entity1.DeclaringType.Equals(entity.DeclaringType) && item.Entity1.Name.Equals(entity.Name))
-                    || (item.Entity2.DeclaringType.Equals(entity.DeclaringType) && item.Entity2.Name.Equals(entity.Name)))
+                if (item.Contains(entity))
                 {
                     mappingsToRemove.Add(item);
                 }
@@ -272,14 +274,18 @@ namespace AweSamNet.Data
             PropertyInfo mapToProp = null;
             if (Mappings.Keys.Contains(profile))
             {
-
                 var profileMappings = Mappings[profile];
 
+                Mapping mapping = null;
                 //now that we have the selector property, get the mapped property counterpart.
-                var mapping = (from x in profileMappings
-                               where (x.Entity1.DeclaringType.Equals(property.DeclaringType) && x.Entity1.Name.Equals(property.Name))
-                                   || (x.Entity2.DeclaringType.Equals(property.DeclaringType) && x.Entity2.Name.Equals(property.Name))
-                               select x).FirstOrDefault();
+                foreach (var item in profileMappings)
+                {
+                    if (item.Contains(property))
+                    {
+                        mapping = item;
+                        break;
+                    }
+                }
 
                 if (mapping != null)
                 {
@@ -300,6 +306,48 @@ namespace AweSamNet.Data
             {
                 Mappings.Remove(profile);
             }
+        }
+
+        /// <summary>
+        /// Returns true if the passed selector exists in the passed profile's mappings.
+        /// </summary>
+        /// <typeparam name="T">Type of selector class.</typeparam>
+        /// <param name="selector">Property selector of T.</param>
+        /// <param name="profile">Mapping profile to search.  Empty: Default.</param>
+        /// <returns>Returns true if the passed selector exists in the passed profile's mappings.</returns>
+        public static bool Contains<T>(Expression<Func<T, object>> selector, string profile = DEFAULT_PROFILE_NAME)
+        {
+            PropertyInfo selectorProp = GetSelectorPropertyInfo(selector);
+            return Contains(selectorProp, profile);
+        }
+
+        /// <summary>
+        /// Returns true if the passed selector exists in the passed profile's mappings.
+        /// </summary>
+        /// <param name="property">Property to search for in the passed profile's mappings.</param>
+        /// <param name="profile">Mapping profile to search.  Empty: Default.</param>
+        /// <returns>Returns true if the passed selector exists in the passed profile's mappings.</returns>
+        public static bool Contains(PropertyInfo property, string profile = DEFAULT_PROFILE_NAME)
+        {
+            if (Mappings.Keys.Contains(profile))
+            {
+                var profileMappings = Mappings[profile];
+
+
+                Mapping mapping = null;
+                foreach (var item in profileMappings)
+                {
+                    if (item.Contains(property))
+                    {
+                        mapping = item;
+                        break;
+                    }
+                }
+
+                return mapping != null;
+            }
+
+            return false;
         }
     }
 }
