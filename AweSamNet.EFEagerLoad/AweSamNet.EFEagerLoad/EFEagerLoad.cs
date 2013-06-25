@@ -25,6 +25,8 @@ namespace AweSamNet.Data
         const string PROPERTY_ALREADY_MAPPED_MESSAGE = "Property: {0}.{1} is already mapped to Property: {2}.{3}";
         const string DEFAULT_PROFILE_NAME = "Default";
 
+        static object syncKey = new object();
+
         private static int _MaxRecursionLevel = 3;
         /// <summary>
         /// Gets/Sets the maximum number of recursion levels to eager load.
@@ -78,32 +80,36 @@ namespace AweSamNet.Data
         /// <exception cref="ArgumentException">ArgumentException: Thrown when a passed selector has already been mapped for the given profile.</exception>
         public static void AddEFMapping<TEntity1, TEntity2>(Expression<Func<TEntity1, object>> entity1Selector, Expression<Func<TEntity2, object>> entity2Selector, string profile = DEFAULT_PROFILE_NAME)
         {
-            //see if the mapping profile exists
-            if (!Mappings.Keys.Contains(profile))
+            lock (syncKey)
             {
-                Mappings[profile] = new List<Mapping>();
-            }
-
-            var profileMappings = Mappings[profile];
-
-            var entity1 = GetSelectorPropertyInfo(entity1Selector);
-            var entity2 = GetSelectorPropertyInfo(entity2Selector);
-
-            bool mappingAlreadyExists = false;
-            //verify that it does not already exist
-            foreach (var item in profileMappings)
-            {
-                if (item.Contains(entity1) || item.Contains(entity2))
+                //see if the mapping profile exists
+                if (!Mappings.Keys.Contains(profile))
                 {
-                    throw new ArgumentException(String.Format(PROPERTY_ALREADY_MAPPED_MESSAGE
-                        , item.Entity1.DeclaringType.Name, item.Entity1.Name
-                        , item.Entity2.DeclaringType.Name, item.Entity2.Name));
+                    Mappings[profile] = new List<Mapping>();
                 }
-            }
 
-            if (!mappingAlreadyExists) //if it already exists then ignore this mapping.
-            {
-                profileMappings.Add(new Mapping(entity1, entity2));
+                var profileMappings = Mappings[profile];
+
+                var entity1 = GetSelectorPropertyInfo(entity1Selector);
+                var entity2 = GetSelectorPropertyInfo(entity2Selector);
+
+                bool mappingAlreadyExists = false;
+
+                //verify that it does not already exist
+                foreach (var item in profileMappings)
+                {
+                    if (item.Contains(entity1) || item.Contains(entity2))
+                    {
+                        throw new ArgumentException(String.Format(PROPERTY_ALREADY_MAPPED_MESSAGE
+                            , item.Entity1.DeclaringType.Name, item.Entity1.Name
+                            , item.Entity2.DeclaringType.Name, item.Entity2.Name));
+                    }
+                }
+
+                if (!mappingAlreadyExists) //if it already exists then ignore this mapping.
+                {
+                    profileMappings.Add(new Mapping(entity1, entity2));
+                }
             }
         }
 
@@ -115,28 +121,31 @@ namespace AweSamNet.Data
         /// <param name="profile">The profile to add the mapping to (Empty: Default profile).</param>
         public static void RemoveMappingsFor<TEntity>(Expression<Func<TEntity, object>> entitySelector, string profile = DEFAULT_PROFILE_NAME)
         {
-            var entity = GetSelectorPropertyInfo(entitySelector);
-
-            List<Mapping> mappingsToRemove = new List<Mapping>();
-            if (!Mappings.Keys.Contains(profile))
+            lock (syncKey)
             {
-                return;
-            } 
-            
-            var profileMappings = Mappings[profile];
+                var entity = GetSelectorPropertyInfo(entitySelector);
 
-            //remove all mappings for this property.
-            foreach (var item in profileMappings)
-            {
-                if (item.Contains(entity))
+                List<Mapping> mappingsToRemove = new List<Mapping>();
+                if (!Mappings.Keys.Contains(profile))
                 {
-                    mappingsToRemove.Add(item);
+                    return;
                 }
-            }
 
-            foreach (var item in mappingsToRemove)
-            {
-                profileMappings.Remove(item);
+                var profileMappings = Mappings[profile];
+
+                //remove all mappings for this property.
+                foreach (var item in profileMappings)
+                {
+                    if (item.Contains(entity))
+                    {
+                        mappingsToRemove.Add(item);
+                    }
+                }
+
+                foreach (var item in mappingsToRemove)
+                {
+                    profileMappings.Remove(item);
+                }
             }
         }
 
@@ -227,7 +236,6 @@ namespace AweSamNet.Data
         {
             if (currentRecursionLevel++ < MaxRecursionLevel && eagerLoad != null)
             {
-
                 foreach (var item in eagerLoad)
                 {
                     PropertyInfo selectorProp = GetSelectorPropertyInfo(item);
@@ -271,29 +279,32 @@ namespace AweSamNet.Data
         /// <returns>Returns the mapping counterpart to a given PropertyInfo.</returns>
         public static PropertyInfo GetMappedCounterPart(PropertyInfo property, string profile = DEFAULT_PROFILE_NAME)
         {
-            PropertyInfo mapToProp = null;
-            if (Mappings.Keys.Contains(profile))
+            lock (syncKey)
             {
-                var profileMappings = Mappings[profile];
-
-                Mapping mapping = null;
-                //now that we have the selector property, get the mapped property counterpart.
-                foreach (var item in profileMappings)
+                PropertyInfo mapToProp = null;
+                if (Mappings.Keys.Contains(profile))
                 {
-                    if (item.Contains(property))
+                    var profileMappings = Mappings[profile];
+
+                    Mapping mapping = null;
+                    //now that we have the selector property, get the mapped property counterpart.
+                    foreach (var item in profileMappings)
                     {
-                        mapping = item;
-                        break;
+                        if (item.Contains(property))
+                        {
+                            mapping = item;
+                            break;
+                        }
+                    }
+
+                    if (mapping != null)
+                    {
+                        mapToProp = mapping.Entity1.DeclaringType.Equals(property.DeclaringType) && mapping.Entity1.Name.Equals(property.Name) ?
+                            mapping.Entity2 : mapping.Entity1;
                     }
                 }
-
-                if (mapping != null)
-                {
-                    mapToProp = mapping.Entity1.DeclaringType.Equals(property.DeclaringType) && mapping.Entity1.Name.Equals(property.Name) ?
-                        mapping.Entity2 : mapping.Entity1;
-                }
+                return mapToProp;
             }
-            return mapToProp;
         }
 
         /// <summary>
@@ -302,9 +313,12 @@ namespace AweSamNet.Data
         /// <param name="profile">Profile name to remove.</param>
         public static void RemoveProfile(string profile)
         {
-            if (Mappings.Keys.Contains(profile))
+            lock (syncKey)
             {
-                Mappings.Remove(profile);
+                if (Mappings.Keys.Contains(profile))
+                {
+                    Mappings.Remove(profile);
+                }
             }
         }
 
@@ -329,23 +343,25 @@ namespace AweSamNet.Data
         /// <returns>Returns true if the passed selector exists in the passed profile's mappings.</returns>
         public static bool Contains(PropertyInfo property, string profile = DEFAULT_PROFILE_NAME)
         {
-            if (Mappings.Keys.Contains(profile))
+            lock (syncKey)
             {
-                var profileMappings = Mappings[profile];
-
-
-                Mapping mapping = null;
-                foreach (var item in profileMappings)
+                if (Mappings.Keys.Contains(profile))
                 {
-                    if (item.Contains(property))
-                    {
-                        mapping = item;
-                        break;
-                    }
-                }
+                    var profileMappings = Mappings[profile];
 
-                return mapping != null;
-            }
+                    Mapping mapping = null;
+                    foreach (var item in profileMappings)
+                    {
+                        if (item.Contains(property))
+                        {
+                            mapping = item;
+                            break;                             
+                        }
+                    }
+
+                    return mapping != null;
+                }
+            } 
 
             return false;
         }
