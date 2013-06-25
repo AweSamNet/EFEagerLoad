@@ -70,15 +70,32 @@ namespace AweSamNet.Data
         private static Dictionary<string, List<Mapping>> Mappings = new Dictionary<string,List<Mapping>>();
 
         /// <summary>
-        /// Adds a new mapping between one class property to another class property.
+        /// Adds a new mapping between one class property to another class property.  Returns false if unsuccessful.
+        /// </summary>
+        /// <typeparam name="TEntity1">Type of Entity 1.</typeparam>
+        /// <typeparam name="TEntity2">Type of Entity 2.</typeparam>
+        /// <param name="entity1Selector">Selector for Entity 1.</param>
+        /// <param name="entity2Selector">Selector for Entity 2.</param>
+        /// <param name="exceptionPassthrough">If true, throws an exception with detailed message when a property is already mapped.</param>
+        /// <exception cref="ArgumentException">ArgumentException: Thrown when a passed selector has already been mapped for the given profile.</exception>
+        /// <returns>Returns false if unsuccessful.</returns>
+        public static bool AddEFMapping<TEntity1, TEntity2>(Expression<Func<TEntity1, object>> entity1Selector, Expression<Func<TEntity2, object>> entity2Selector, bool exceptionPassthrough = false)
+        {
+            return AddEFMapping(entity1Selector, entity2Selector, DEFAULT_PROFILE_NAME, exceptionPassthrough);
+        }
+
+        /// <summary>
+        /// Adds a new mapping between one class property to another class property.  Returns false if unsuccessful.
         /// </summary>
         /// <typeparam name="TEntity1">Type of Entity 1.</typeparam>
         /// <typeparam name="TEntity2">Type of Entity 2.</typeparam>
         /// <param name="entity1Selector">Selector for Entity 1.</param>
         /// <param name="entity2Selector">Selector for Entity 2.</param>
         /// <param name="profile">The profile to add the mapping to (Empty: Default profile).</param>
+        /// <param name="exceptionPassthrough">If true, throws an exception with detailed message when a property is already mapped.</param>
         /// <exception cref="ArgumentException">ArgumentException: Thrown when a passed selector has already been mapped for the given profile.</exception>
-        public static void AddEFMapping<TEntity1, TEntity2>(Expression<Func<TEntity1, object>> entity1Selector, Expression<Func<TEntity2, object>> entity2Selector, string profile = DEFAULT_PROFILE_NAME)
+        /// <returns>Returns false if unsuccessful.</returns>
+        public static bool AddEFMapping<TEntity1, TEntity2>(Expression<Func<TEntity1, object>> entity1Selector, Expression<Func<TEntity2, object>> entity2Selector, string profile = DEFAULT_PROFILE_NAME, bool exceptionPassthrough = false)
         {
             lock (syncKey)
             {
@@ -100,9 +117,14 @@ namespace AweSamNet.Data
                 {
                     if (item.Contains(entity1) || item.Contains(entity2))
                     {
-                        throw new ArgumentException(String.Format(PROPERTY_ALREADY_MAPPED_MESSAGE
-                            , item.Entity1.DeclaringType.Name, item.Entity1.Name
-                            , item.Entity2.DeclaringType.Name, item.Entity2.Name));
+                        //if exceptionPassthrough is enabled then throw an exception.
+                        if (exceptionPassthrough)
+                        {
+                            throw new ArgumentException(String.Format(PROPERTY_ALREADY_MAPPED_MESSAGE
+                                , item.Entity1.DeclaringType.Name, item.Entity1.Name
+                                , item.Entity2.DeclaringType.Name, item.Entity2.Name));
+                        }
+                        return false;
                     }
                 }
 
@@ -111,6 +133,8 @@ namespace AweSamNet.Data
                     profileMappings.Add(new Mapping(entity1, entity2));
                 }
             }
+
+            return true;
         }
 
         /// <summary>
