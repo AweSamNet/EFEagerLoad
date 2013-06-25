@@ -91,11 +91,11 @@ namespace AweSamNet.Data
         /// <typeparam name="TEntity2">Type of Entity 2.</typeparam>
         /// <param name="entity1Selector">Selector for Entity 1.</param>
         /// <param name="entity2Selector">Selector for Entity 2.</param>
-        /// <param name="profile">The profile to add the mapping to (Empty: Default profile).</param>
+        /// <param name="profile">The profile to add the mapping to.</param>
         /// <param name="exceptionPassthrough">If true, throws an exception with detailed message when a property is already mapped.</param>
         /// <exception cref="ArgumentException">ArgumentException: Thrown when a passed selector has already been mapped for the given profile.</exception>
         /// <returns>Returns false if unsuccessful.</returns>
-        public static bool AddEFMapping<TEntity1, TEntity2>(Expression<Func<TEntity1, object>> entity1Selector, Expression<Func<TEntity2, object>> entity2Selector, string profile = DEFAULT_PROFILE_NAME, bool exceptionPassthrough = false)
+        public static bool AddEFMapping<TEntity1, TEntity2>(Expression<Func<TEntity1, object>> entity1Selector, Expression<Func<TEntity2, object>> entity2Selector, string profile, bool exceptionPassthrough = false)
         {
             lock (syncKey)
             {
