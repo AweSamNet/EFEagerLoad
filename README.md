@@ -3,6 +3,8 @@ EFEagerLoad
 
 EFEagerLoad allows you to easily and selectively eager load your Entity Framework entities (Collections and straight entities) using isolated project model selectors. 
 
+[![donate](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif "PayPal - The safer, easier way to pay online!")](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=3RKQDTC6TYWMC)
+
 ## Contents
 - [License](#license)
 - [About the AweSam.Net Project] (#About-the-AweSamNet-Project)
